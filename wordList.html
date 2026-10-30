@@ -1,0 +1,783 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>译林英语·3-6年级</title>
+<style>
+  body{font-family:sans-serif;background:#f0f4f8;margin:0;padding:10px;color:#333}
+  .header{margin-bottom:10px}.header h1{font-size:20px;margin:0}.header p{font-size:12px;color:#666;margin:4px 0 0}
+  .controls{display:flex;gap:10px;margin-bottom:10px}
+  select{flex:1;padding:10px;border-radius:8px;border:1px solid #ccc;background:#fff}
+  .days{display:flex;gap:10px;margin-bottom:10px}
+  .days button{flex:1;padding:10px;border:none;border-radius:8px;background:#3b82f6;color:#fff;font-size:16px}
+  #dayLabel{font-weight:bold;margin:10px 0;color:#1e40af}
+  .card{background:#fff;padding:15px;border-radius:12px;margin-bottom:12px;box-shadow:0 2px 5px rgba(0,0,0,0.05)}
+  .en{font-size:22px;font-weight:bold;color:#2563eb}
+  .ph{color:#888;font-size:14px;margin:4px 0}
+  .cn{font-size:16px;margin-bottom:6px}
+  .phrase{background:#fef3c7;padding:6px;border-radius:6px;color:#b45309;margin-bottom:10px}
+  .btns{display:flex;gap:8px}
+  .btns button{padding:6px 12px;border:none;border-radius:6px;color:#fff}
+  .know{background:#10b981}.unknow{background:#ef4444}
+  .wrong-box{background:#fff;padding:10px;border-radius:12px;margin-top:20px}
+  .wrong-box h3{margin:0 0 10px}.wrong-box li{cursor:pointer;margin-bottom:5px}
+  .clear-btn{padding:8px 12px;border:none;border-radius:6px;background:#e5e7eb;margin-top:10px}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>译林英语·3-6年级</h1>
+  <p>按天学单词+短语·点词发音·错词本·手机直接用</p>
+</div>
+<div class="controls">
+  <select id="grade"></select>
+  <select id="unit"></select>
+</div>
+<div class="days">
+  <button onclick="prevDay()">前一天</button>
+  <button onclick="nextDay()">后一天</button>
+</div>
+<div id="dayLabel"></div>
+<div id="list"></div>
+<div class="wrong-box">
+  <h3>错词本</h3>
+  <ul id="wrongList"></ul>
+  <button class="clear-btn" onclick="clearWrong()">清空错词</button>
+</div>
+
+<script>
+const DATA = {
+ "3上": {
+    "U1": [
+      {en:"hello",ph:"/həˈləʊ/",cn:"你好",phrase:"say hello"},
+      {en:"hi",ph:"/haɪ/",cn:"你好",phrase:"Hi, Mike."},
+      {en:"goodbye",ph:"/ɡʊdˈbaɪ/",cn:"再见",phrase:"say goodbye"},
+      {en:"I",ph:"/aɪ/",cn:"我",phrase:"I am..."},
+      {en:"am",ph:"/æm/",cn:"是",phrase:"I am"},
+      {en:"Miss",ph:"/mɪs/",cn:"小姐",phrase:"Miss Li"},
+      {en:"Mr",ph:"/ˈmɪstə(r)/",cn:"先生",phrase:"Mr Green"}
+    ],
+    "U2": [
+      {en:"are",ph:"/ɑː(r)/",cn:"是",phrase:"You are"},
+      {en:"you",ph:"/juː/",cn:"你/你们",phrase:"How are you?"},
+      {en:"yes",ph:"/jes/",cn:"是的",phrase:"Yes, I am"},
+      {en:"no",ph:"/nəʊ/",cn:"不",phrase:"No, I'm not"},
+      {en:"not",ph:"/nɒt/",cn:"不",phrase:"I'm not"},
+      {en:"good",ph:"/ɡʊd/",cn:"好的",phrase:"very good"},
+      {en:"morning",ph:"/ˈmɔːnɪŋ/",cn:"早上",phrase:"Good morning"},
+      {en:"afternoon",ph:"/ˌɑːftəˈnuːn/",cn:"下午",phrase:"Good afternoon"}
+    ],
+    "U3": [
+      {en:"my",ph:"/maɪ/",cn:"我的",phrase:"my friend"},
+      {en:"friend",ph:"/frend/",cn:"朋友",phrase:"a good friend"},
+      {en:"she",ph:"/ʃiː/",cn:"她",phrase:"She is"},
+      {en:"he",ph:"/hiː/",cn:"他",phrase:"He is"},
+      {en:"is",ph:"/ɪz/",cn:"是",phrase:"He is"},
+      {en:"too",ph:"/tuː/",cn:"也",phrase:"me too"},
+      {en:"this",ph:"/ðɪs/",cn:"这",phrase:"This is"},
+      {en:"sister",ph:"/ˈsɪstə(r)/",cn:"姐妹",phrase:"my sister"}
+    ],
+    "U4": [
+      {en:"family",ph:"/ˈfæməli/",cn:"家庭",phrase:"my family"},
+      {en:"father",ph:"/ˈfɑːðə(r)/",cn:"父亲",phrase:"my father"},
+      {en:"mother",ph:"/ˈmʌðə(r)/",cn:"母亲",phrase:"my mother"},
+      {en:"brother",ph:"/ˈbrʌðə(r)/",cn:"兄弟",phrase:"my brother"},
+      {en:"me",ph:"/miː/",cn:"我(宾格)",phrase:"love me"},
+      {en:"love",ph:"/lʌv/",cn:"爱",phrase:"I love you"},
+      {en:"grandpa",ph:"/ˈɡrænpɑː/",cn:"爷爷",phrase:"my grandpa"},
+      {en:"grandma",ph:"/ˈɡrænmɑː/",cn:"奶奶",phrase:"my grandma"}
+    ],
+    "U5": [
+      {en:"look",ph:"/lʊk/",cn:"看",phrase:"look at"},
+      {en:"at",ph:"/æt/",cn:"在",phrase:"look at"},
+      {en:"T-shirt",ph:"/ˈtiː ʃɜːt/",cn:"T恤",phrase:"a red T-shirt"},
+      {en:"skirt",ph:"/skɜːt/",cn:"裙子",phrase:"a blue skirt"},
+      {en:"cap",ph:"/kæp/",cn:"帽子",phrase:"a yellow cap"},
+      {en:"jacket",ph:"/ˈdʒækɪt/",cn:"夹克",phrase:"a brown jacket"},
+      {en:"shirt",ph:"/ʃɜːt/",cn:"衬衫",phrase:"a white shirt"},
+      {en:"shoe",ph:"/ʃuː/",cn:"鞋子",phrase:"a pair of shoes"}
+    ],
+    "U6": [
+      {en:"colour",ph:"/ˈkʌlə(r)/",cn:"颜色",phrase:"what colour"},
+      {en:"red",ph:"/red/",cn:"红色",phrase:"red apple"},
+      {en:"green",ph:"/ɡriːn/",cn:"绿色",phrase:"green tree"},
+      {en:"blue",ph:"/bluː/",cn:"蓝色",phrase:"blue sky"},
+      {en:"yellow",ph:"/ˈjeləʊ/",cn:"黄色",phrase:"yellow banana"},
+      {en:"black",ph:"/blæk/",cn:"黑色",phrase:"black cat"},
+      {en:"white",ph:"/waɪt/",cn:"白色",phrase:"white snow"},
+      {en:"orange",ph:"/ˈɒrɪndʒ/",cn:"橙色/橙子",phrase:"orange juice"}
+    ],
+    "U7": [
+      {en:"pie",ph:"/paɪ/",cn:"派",phrase:"a pie"},
+      {en:"cake",ph:"/keɪk/",cn:"蛋糕",phrase:"a cake"},
+      {en:"sweet",ph:"/swiːt/",cn:"糖果",phrase:"a sweet"},
+      {en:"hot dog",ph:"/hɒt dɒɡ/",cn:"热狗",phrase:"a hot dog"},
+      {en:"ice cream",ph:"/aɪs kriːm/",cn:"冰淇淋",phrase:"an ice cream"},
+      {en:"egg",ph:"/eɡ/",cn:"鸡蛋",phrase:"an egg"},
+      {en:"would like",ph:"/wʊd laɪk/",cn:"想要",phrase:"I'd like"},
+      {en:"some",ph:"/sʌm/",cn:"一些",phrase:"some cakes"}
+    ],
+    "U8": [
+      {en:"happy",ph:"/ˈhæpi/",cn:"快乐的",phrase:"Happy New Year"},
+      {en:"new",ph:"/njuː/",cn:"新的",phrase:"New Year"},
+      {en:"year",ph:"/jɪə(r)/",cn:"年",phrase:"a new year"},
+      {en:"for",ph:"/fɔː(r)/",cn:"为了",phrase:"a gift for you"},
+      {en:"gift",ph:"/ɡɪft/",cn:"礼物",phrase:"a nice gift"},
+      {en:"card",ph:"/kɑːd/",cn:"卡片",phrase:"a card"},
+      {en:"thank",ph:"/θæŋk/",cn:"感谢",phrase:"thank you"},
+      {en:"birthday",ph:"/ˈbɜːθdeɪ/",cn:"生日",phrase:"Happy Birthday"}
+    ]
+  },
+  "3下": {
+    "U1": [
+      {en:"school",ph:"/skuːl/",cn:"学校",phrase:"go to school"},
+      {en:"classroom",ph:"/ˈklɑːsruːm/",cn:"教室",phrase:"in the classroom"},
+      {en:"window",ph:"/ˈwɪndəʊ/",cn:"窗户",phrase:"open the window"},
+      {en:"door",ph:"/dɔː(r)/",cn:"门",phrase:"close the door"},
+      {en:"desk",ph:"/desk/",cn:"书桌",phrase:"a clean desk"},
+      {en:"chair",ph:"/tʃeə(r)/",cn:"椅子",phrase:"a chair"},
+      {en:"blackboard",ph:"/ˈblækbɔːd/",cn:"黑板",phrase:"on the blackboard"},
+      {en:"book",ph:"/bʊk/",cn:"书",phrase:"an English book"}
+    ],
+    "U2": [
+      {en:"in",ph:"/ɪn/",cn:"在...里",phrase:"in the box"},
+      {en:"on",ph:"/ɒn/",cn:"在...上",phrase:"on the desk"},
+      {en:"under",ph:"/ˈʌndə(r)/",cn:"在...下",phrase:"under the chair"},
+      {en:"behind",ph:"/bɪˈhaɪnd/",cn:"在...后",phrase:"behind the door"},
+      {en:"in front of",ph:"/ɪn frʌnt ɒv/",cn:"在...前",phrase:"in front of me"},
+      {en:"where",ph:"/weə(r)/",cn:"哪里",phrase:"Where is it?"},
+      {en:"pencil",ph:"/ˈpensl/",cn:"铅笔",phrase:"a pencil"},
+      {en:"pen",ph:"/pen/",cn:"钢笔",phrase:"a pen"}
+    ],
+    "U3": [
+      {en:"how many",ph:"/haʊ ˈmeni/",cn:"多少",phrase:"How many?"},
+      {en:"one",ph:"/wʌn/",cn:"一",phrase:"number one"},
+      {en:"two",ph:"/tuː/",cn:"二",phrase:"two apples"},
+      {en:"three",ph:"/θriː/",cn:"三",phrase:"three books"},
+      {en:"four",ph:"/fɔː(r)/",cn:"四",phrase:"four chairs"},
+      {en:"five",ph:"/faɪv/",cn:"五",phrase:"five pens"},
+      {en:"six",ph:"/sɪks/",cn:"六",phrase:"six cats"},
+      {en:"seven",ph:"/ˈsevn/",cn:"七",phrase:"seven days"},
+      {en:"eight",ph:"/eɪt/",cn:"八",phrase:"eight dogs"},
+      {en:"nine",ph:"/naɪn/",cn:"九",phrase:"nine birds"},
+      {en:"ten",ph:"/ten/",cn:"十",phrase:"ten fingers"}
+    ],
+    "U4": [
+      {en:"apple",ph:"/ˈæpl/",cn:"苹果",phrase:"an apple"},
+      {en:"banana",ph:"/bəˈnɑːnə/",cn:"香蕉",phrase:"a banana"},
+      {en:"orange",ph:"/ˈɒrɪndʒ/",cn:"橙子",phrase:"an orange"},
+      {en:"pear",ph:"/peə(r)/",cn:"梨",phrase:"a pear"},
+      {en:"pineapple",ph:"/ˈpaɪnæpl/",cn:"菠萝",phrase:"a pineapple"},
+      {en:"mango",ph:"/ˈmæŋɡəʊ/",cn:"芒果",phrase:"a mango"},
+      {en:"grape",ph:"/ɡreɪp/",cn:"葡萄",phrase:"some grapes"},
+      {en:"fruit",ph:"/fruːt/",cn:"水果",phrase:"like fruit"}
+    ],
+    "U5": [
+      {en:"get up",ph:"/ɡet ʌp/",cn:"起床",phrase:"get up early"},
+      {en:"go to school",ph:"/ɡəʊ tu skuːl/",cn:"去上学",phrase:"go to school"},
+      {en:"have lunch",ph:"/hæv lʌntʃ/",cn:"吃午饭",phrase:"have lunch"},
+      {en:"go home",ph:"/ɡəʊ həʊm/",cn:"回家",phrase:"go home"},
+      {en:"have dinner",ph:"/hæv ˈdɪnə/",cn:"吃晚饭",phrase:"have dinner"},
+      {en:"watch TV",ph:"/wɒtʃ tiː ˈviː/",cn:"看电视",phrase:"watch TV"},
+      {en:"go to bed",ph:"/ɡəʊ tu bed/",cn:"睡觉",phrase:"go to bed"},
+      {en:"time",ph:"/taɪm/",cn:"时间",phrase:"what time"}
+    ],
+    "U6": [
+      {en:"open",ph:"/ˈəʊpən/",cn:"打开",phrase:"open the door"},
+      {en:"close",ph:"/kləʊz/",cn:"关闭",phrase:"close the window"},
+      {en:"milk",ph:"/mɪlk/",cn:"牛奶",phrase:"a glass of milk"},
+      {en:"water",ph:"/ˈwɔːtə(r)/",cn:"水",phrase:"drink water"},
+      {en:"tea",ph:"/tiː/",cn:"茶",phrase:"a cup of tea"},
+      {en:"juice",ph:"/dʒuːs/",cn:"果汁",phrase:"orange juice"},
+      {en:"hungry",ph:"/ˈhʌŋɡri/",cn:"饿的",phrase:"I'm hungry"},
+      {en:"thirsty",ph:"/ˈθɜːsti/",cn:"渴的",phrase:"I'm thirsty"}
+    ],
+    "U7": [
+      {en:"farm",ph:"/fɑːm/",cn:"农场",phrase:"on the farm"},
+      {en:"pig",ph:"/pɪɡ/",cn:"猪",phrase:"a pig"},
+      {en:"cow",ph:"/kaʊ/",cn:"奶牛",phrase:"a cow"},
+      {en:"chicken",ph:"/ˈtʃɪkɪn/",cn:"鸡",phrase:"a chicken"},
+      {en:"duck",ph:"/dʌk/",cn:"鸭子",phrase:"a duck"},
+      {en:"horse",ph:"/hɔːs/",cn:"马",phrase:"a horse"},
+      {en:"sheep",ph:"/ʃiːp/",cn:"羊",phrase:"a sheep"},
+      {en:"vegetable",ph:"/ˈvedʒtəbl/",cn:"蔬菜",phrase:"like vegetables"}
+    ],
+    "U8": [
+      {en:"we",ph:"/wiː/",cn:"我们",phrase:"we are"},
+      {en:"they",ph:"/ðeɪ/",cn:"他们",phrase:"they are"},
+      {en:"man",ph:"/mæn/",cn:"男人",phrase:"a man"},
+      {en:"woman",ph:"/ˈwʊmən/",cn:"女人",phrase:"a woman"},
+      {en:"boy",ph:"/bɔɪ/",cn:"男孩",phrase:"a boy"},
+      {en:"girl",ph:"/ɡɜːl/",cn:"女孩",phrase:"a girl"},
+      {en:"baby",ph:"/ˈbeɪbi/",cn:"婴儿",phrase:"a baby"},
+      {en:"name",ph:"/neɪm/",cn:"名字",phrase:"your name"}
+    ]
+  },
+  "4上": {
+    "U1": [
+      {en:"like",ph:"/laɪk/",cn:"喜欢",phrase:"I like"},
+      {en:"dog",ph:"/dɒɡ/",cn:"狗",phrase:"a dog"},
+      {en:"cat",ph:"/kæt/",cn:"猫",phrase:"a cat"},
+      {en:"panda",ph:"/ˈpændə/",cn:"熊猫",phrase:"a panda"},
+      {en:"monkey",ph:"/ˈmʌŋki/",cn:"猴子",phrase:"a monkey"},
+      {en:"elephant",ph:"/ˈelɪfənt/",cn:"大象",phrase:"an elephant"},
+      {en:"horse",ph:"/hɔːs/",cn:"马",phrase:"a horse"},
+      {en:"lion",ph:"/ˈlaɪən/",cn:"狮子",phrase:"a lion"},
+      {en:"tiger",ph:"/ˈtaɪɡə(r)/",cn:"老虎",phrase:"a tiger"}
+    ],
+    "U2": [
+      {en:"have",ph:"/hæv/",cn:"有/吃",phrase:"I have"},
+      {en:"some",ph:"/sʌm/",cn:"一些",phrase:"some toys"},
+      {en:"any",ph:"/ˈeni/",cn:"任何",phrase:"Do you have any?"},
+      {en:"toy",ph:"/tɔɪ/",cn:"玩具",phrase:"a toy car"},
+      {en:"car",ph:"/kɑː(r)/",cn:"汽车",phrase:"a toy car"},
+      {en:"ball",ph:"/bɔːl/",cn:"球",phrase:"a ball"},
+      {en:"kite",ph:"/kaɪt/",cn:"风筝",phrase:"fly a kite"},
+      {en:"robot",ph:"/ˈrəʊbɒt/",cn:"机器人",phrase:"a robot"},
+      {en:"box",ph:"/bɒks/",cn:"盒子",phrase:"a box"}
+    ],
+    "U3": [
+      {en:"thirteen",ph:"/ˌθɜːˈtiːn/",cn:"十三",phrase:"thirteen apples"},
+      {en:"fourteen",ph:"/ˌfɔːˈtiːn/",cn:"十四",phrase:"fourteen books"},
+      {en:"fifteen",ph:"/ˌfɪfˈtiːn/",cn:"十五",phrase:"fifteen pens"},
+      {en:"sixteen",ph:"/ˌsɪksˈtiːn/",cn:"十六",phrase:"sixteen cats"},
+      {en:"seventeen",ph:"/ˌsevnˈtiːn/",cn:"十七",phrase:"seventeen dogs"},
+      {en:"eighteen",ph:"/ˌeɪˈtiːn/",cn:"十八",phrase:"eighteen birds"},
+      {en:"nineteen",ph:"/ˌnaɪnˈtiːn/",cn:"十九",phrase:"nineteen trees"},
+      {en:"twenty",ph:"/ˈtwenti/",cn:"二十",phrase:"twenty students"},
+      {en:"many",ph:"/ˈmeni/",cn:"许多",phrase:"how many"}
+    ],
+    "U4": [
+      {en:"fly",ph:"/flaɪ/",cn:"飞/放",phrase:"fly a kite"},
+      {en:"swim",ph:"/swɪm/",cn:"游泳",phrase:"can swim"},
+      {en:"jump",ph:"/dʒʌmp/",cn:"跳",phrase:"jump high"},
+      {en:"skate",ph:"/skeɪt/",cn:"滑冰",phrase:"go skating"},
+      {en:"run",ph:"/rʌn/",cn:"跑",phrase:"run fast"},
+      {en:"can",ph:"/kæn/",cn:"能",phrase:"I can"},
+      {en:"cannot",ph:"/ˈkænɒt/",cn:"不能",phrase:"I cannot"},
+      {en:"well",ph:"/wel/",cn:"好",phrase:"do well"}
+    ],
+    "U5": [
+      {en:"home",ph:"/həʊm/",cn:"家",phrase:"go home"},
+      {en:"bedroom",ph:"/ˈbedruːm/",cn:"卧室",phrase:"in the bedroom"},
+      {en:"living room",ph:"/ˈlɪvɪŋ ruːm/",cn:"客厅",phrase:"in the living room"},
+      {en:"kitchen",ph:"/ˈkɪtʃɪn/",cn:"厨房",phrase:"in the kitchen"},
+      {en:"bathroom",ph:"/ˈbɑːθruːm/",cn:"浴室",phrase:"in the bathroom"},
+      {en:"table",ph:"/ˈteɪbl/",cn:"桌子",phrase:"on the table"},
+      {en:"sofa",ph:"/ˈsəʊfə/",cn:"沙发",phrase:"on the sofa"},
+      {en:"fridge",ph:"/frɪdʒ/",cn:"冰箱",phrase:"in the fridge"}
+    ],
+    "U6": [
+      {en:"at",ph:"/æt/",cn:"在",phrase:"at home"},
+      {en:"school",ph:"/skuːl/",cn:"学校",phrase:"at school"},
+      {en:"park",ph:"/pɑːk/",cn:"公园",phrase:"in the park"},
+      {en:"zoo",ph:"/zuː/",cn:"动物园",phrase:"at the zoo"},
+      {en:"library",ph:"/ˈlaɪbrəri/",cn:"图书馆",phrase:"in the library"},
+      {en:"playground",ph:"/ˈpleɪɡraʊnd/",cn:"操场",phrase:"on the playground"},
+      {en:"classroom",ph:"/ˈklɑːsruːm/",cn:"教室",phrase:"in the classroom"},
+      {en:"shop",ph:"/ʃɒp/",cn:"商店",phrase:"a shop"}
+    ],
+    "U7": [
+      {en:"how much",ph:"/haʊ mʌtʃ/",cn:"多少钱",phrase:"How much is it?"},
+      {en:"shoe",ph:"/ʃuː/",cn:"鞋子",phrase:"a pair of shoes"},
+      {en:"sock",ph:"/sɒk/",cn:"袜子",phrase:"a pair of socks"},
+      {en:"umbrella",ph:"/ʌmˈbrelə/",cn:"雨伞",phrase:"an umbrella"},
+      {en:"fan",ph:"/fæn/",cn:"扇子",phrase:"a fan"},
+      {en:"thirty",ph:"/ˈθɜːti/",cn:"三十",phrase:"thirty yuan"},
+      {en:"forty",ph:"/ˈfɔːti/",cn:"四十",phrase:"forty books"},
+      {en:"fifty",ph:"/ˈfɪfti/",cn:"五十",phrase:"fifty students"}
+    ],
+    "U8": [
+      {en:"hair",ph:"/heə(r)/",cn:"头发",phrase:"long hair"},
+      {en:"eye",ph:"/aɪ/",cn:"眼睛",phrase:"big eyes"},
+      {en:"ear",ph:"/ɪə(r)/",cn:"耳朵",phrase:"small ears"},
+      {en:"nose",ph:"/nəʊz/",cn:"鼻子",phrase:"a big nose"},
+      {en:"mouth",ph:"/maʊθ/",cn:"嘴巴",phrase:"a small mouth"},
+      {en:"face",ph:"/feɪs/",cn:"脸",phrase:"a round face"},
+      {en:"tall",ph:"/tɔːl/",cn:"高的",phrase:"tall boy"},
+      {en:"short",ph:"/ʃɔːt/",cn:"矮的/短的",phrase:"short hair"},
+      {en:"thin",ph:"/θɪn/",cn:"瘦的",phrase:"thin girl"},
+      {en:"fat",ph:"/fæt/",cn:"胖的",phrase:"fat cat"}
+    ]
+  },
+  "4下": {
+    "U1": [
+      {en:"subject",ph:"/ˈsʌbdʒɪkt/",cn:"科目",phrase:"favourite subject"},
+      {en:"Chinese",ph:"/ˌtʃaɪˈniːz/",cn:"语文",phrase:"Chinese class"},
+      {en:"Maths",ph:"/mæθs/",cn:"数学",phrase:"Maths class"},
+      {en:"English",ph:"/ˈɪŋɡlɪʃ/",cn:"英语",phrase:"English class"},
+      {en:"Science",ph:"/ˈsaɪəns/",cn:"科学",phrase:"Science class"},
+      {en:"Art",ph:"/ɑːt/",cn:"美术",phrase:"Art class"},
+      {en:"PE",ph:"/ˌpiː ˈiː/",cn:"体育",phrase:"PE class"},
+      {en:"Music",ph:"/ˈmjuːzɪk/",cn:"音乐",phrase:"Music class"},
+      {en:"lesson",ph:"/ˈlesn/",cn:"课",phrase:"a lesson"}
+    ],
+    "U2": [
+      {en:"Wednesday",ph:"/ˈwenzdeɪ/",cn:"星期三",phrase:"on Wednesday"},
+      {en:"Thursday",ph:"/ˈθɜːzdeɪ/",cn:"星期四",phrase:"on Thursday"},
+      {en:"Friday",ph:"/ˈfraɪdeɪ/",cn:"星期五",phrase:"on Friday"},
+      {en:"Saturday",ph:"/ˈsætədeɪ/",cn:"星期六",phrase:"on Saturday"},
+      {en:"Sunday",ph:"/ˈsʌndeɪ/",cn:"星期日",phrase:"on Sunday"},
+      {en:"week",ph:"/wiːk/",cn:"星期/周",phrase:"this week"},
+      {en:"today",ph:"/təˈdeɪ/",cn:"今天",phrase:"today is"},
+      {en:"get up",ph:"/ɡet ʌp/",cn:"起床",phrase:"get up"}
+    ],
+    "U3": [
+      {en:"usually",ph:"/ˈjuːʒuəli/",cn:"通常",phrase:"usually get up"},
+      {en:"go to school",ph:"/ɡəʊ tu skuːl/",cn:"去上学",phrase:"go to school"},
+      {en:"have lunch",ph:"/hæv lʌntʃ/",cn:"吃午饭",phrase:"have lunch"},
+      {en:"go home",ph:"/ɡəʊ həʊm/",cn:"回家",phrase:"go home"},
+      {en:"have dinner",ph:"/hæv ˈdɪnə/",cn:"吃晚饭",phrase:"have dinner"},
+      {en:"watch TV",ph:"/wɒtʃ tiː ˈviː/",cn:"看电视",phrase:"watch TV"},
+      {en:"go to bed",ph:"/ɡəʊ tu bed/",cn:"睡觉",phrase:"go to bed"},
+      {en:"every day",ph:"/ˈevri deɪ/",cn:"每天",phrase:"every day"}
+    ],
+    "U4": [
+      {en:"draw",ph:"/drɔː/",cn:"画",phrase:"draw pictures"},
+      {en:"park",ph:"/pɑːk/",cn:"公园",phrase:"in the park"},
+      {en:"flower",ph:"/ˈflaʊə(r)/",cn:"花",phrase:"draw flowers"},
+      {en:"tree",ph:"/triː/",cn:"树",phrase:"a big tree"},
+      {en:"boat",ph:"/bəʊt/",cn:"船",phrase:"a boat"},
+      {en:"river",ph:"/ˈrɪvə(r)/",cn:"河",phrase:"in the river"},
+      {en:"lake",ph:"/leɪk/",cn:"湖",phrase:"on the lake"},
+      {en:"hill",ph:"/hɪl/",cn:"小山",phrase:"a hill"}
+    ],
+    "U5": [
+      {en:"season",ph:"/ˈsiːzn/",cn:"季节",phrase:"favourite season"},
+      {en:"spring",ph:"/sprɪŋ/",cn:"春天",phrase:"in spring"},
+      {en:"summer",ph:"/ˈsʌmə(r)/",cn:"夏天",phrase:"in summer"},
+      {en:"autumn",ph:"/ˈɔːtəm/",cn:"秋天",phrase:"in autumn"},
+      {en:"winter",ph:"/ˈwɪntə(r)/",cn:"冬天",phrase:"in winter"},
+      {en:"warm",ph:"/wɔːm/",cn:"温暖的",phrase:"warm spring"},
+      {en:"hot",ph:"/hɒt/",cn:"热的",phrase:"hot summer"},
+      {en:"cool",ph:"/kuːl/",cn:"凉爽的",phrase:"cool autumn"},
+      {en:"cold",ph:"/kəʊld/",cn:"冷的",phrase:"cold winter"}
+    ],
+    "U6": [
+      {en:"clothes",ph:"/kləʊðz/",cn:"衣服",phrase:"my clothes"},
+      {en:"coat",ph:"/kəʊt/",cn:"外套",phrase:"a warm coat"},
+      {en:"sweater",ph:"/ˈswetə(r)/",cn:"毛衣",phrase:"a sweater"},
+      {en:"trousers",ph:"/ˈtraʊzəz/",cn:"裤子",phrase:"a pair of trousers"},
+      {en:"dress",ph:"/dres/",cn:"连衣裙",phrase:"a dress"},
+      {en:"shirt",ph:"/ʃɜːt/",cn:"衬衫",phrase:"a shirt"},
+      {en:"shoe",ph:"/ʃuː/",cn:"鞋子",phrase:"a pair of shoes"},
+      {en:"hat",ph:"/hæt/",cn:"帽子",phrase:"a hat"}
+    ],
+    "U7": [
+      {en:"story",ph:"/ˈstɔːri/",cn:"故事",phrase:"a story"},
+      {en:"book",ph:"/bʊk/",cn:"书",phrase:"a book"},
+      {en:"film",ph:"/fɪlm/",cn:"电影",phrase:"see a film"},
+      {en:"song",ph:"/sɒŋ/",cn:"歌",phrase:"a song"},
+      {en:"game",ph:"/ɡeɪm/",cn:"游戏",phrase:"play a game"},
+      {en:"puzzle",ph:"/ˈpʌzl/",cn:"拼图",phrase:"a puzzle"},
+      {en:"read",ph:"/riːd/",cn:"读",phrase:"read books"},
+      {en:"write",ph:"/raɪt/",cn:"写",phrase:"write stories"}
+    ],
+    "U8": [
+      {en:"doll",ph:"/dɒl/",cn:"洋娃娃",phrase:"a doll"},
+      {en:"robot",ph:"/ˈrəʊbɒt/",cn:"机器人",phrase:"a robot"},
+      {en:"ball",ph:"/bɔːl/",cn:"球",phrase:"a ball"},
+      {en:"kite",ph:"/kaɪt/",cn:"风筝",phrase:"a kite"},
+      {en:"toy",ph:"/tɔɪ/",cn:"玩具",phrase:"a toy"},
+      {en:"gift",ph:"/ɡɪft/",cn:"礼物",phrase:"a gift"},
+      {en:"birthday",ph:"/ˈbɜːθdeɪ/",cn:"生日",phrase:"Happy Birthday"},
+      {en:"party",ph:"/ˈpɑːti/",cn:"聚会",phrase:"have a party"}
+    ]
+  },
+ "5上": {
+    "U1": [
+      {en:"golden",ph:"/ˈɡəʊldən/",cn:"金色的",phrase:"golden week"},
+      {en:"week",ph:"/wiːk/",cn:"周",phrase:"a week"},
+      {en:"holiday",ph:"/ˈhɒlədeɪ/",cn:"假期",phrase:"summer holiday"},
+      {en:"National Day",ph:"/ˈnæʃnəl deɪ/",cn:"国庆节",phrase:"National Day holiday"},
+      {en:"visit",ph:"/ˈvɪzɪt/",cn:"拜访",phrase:"visit friends"},
+      {en:"uncle",ph:"/ˈʌŋkl/",cn:"叔叔",phrase:"my uncle"},
+      {en:"aunt",ph:"/ɑːnt/",cn:"阿姨",phrase:"my aunt"},
+      {en:"grandparent",ph:"/ˈɡrænpeərənt/",cn:"祖父母",phrase:"my grandparents"}
+    ],
+    "U2": [
+      {en:"animal",ph:"/ˈænɪml/",cn:"动物",phrase:"an animal"},
+      {en:"bear",ph:"/beə(r)/",cn:"熊",phrase:"a bear"},
+      {en:"elephant",ph:"/ˈelɪfənt/",cn:"大象",phrase:"an elephant"},
+      {en:"lion",ph:"/ˈlaɪən/",cn:"狮子",phrase:"a lion"},
+      {en:"monkey",ph:"/ˈmʌŋki/",cn:"猴子",phrase:"a monkey"},
+      {en:"panda",ph:"/ˈpændə/",cn:"熊猫",phrase:"a panda"},
+      {en:"tiger",ph:"/ˈtaɪɡə(r)/",cn:"老虎",phrase:"a tiger"},
+      {en:"horse",ph:"/hɔːs/",cn:"马",phrase:"a horse"},
+      {en:"zoo",ph:"/zuː/",cn:"动物园",phrase:"go to the zoo"}
+    ],
+    "U3": [
+      {en:"hobby",ph:"/ˈhɒbi/",cn:"爱好",phrase:"my hobby"},
+      {en:"like",ph:"/laɪk/",cn:"喜欢",phrase:"like doing"},
+      {en:"dance",ph:"/dɑːns/",cn:"跳舞",phrase:"like dancing"},
+      {en:"sing",ph:"/sɪŋ/",cn:"唱歌",phrase:"like singing"},
+      {en:"read",ph:"/riːd/",cn:"阅读",phrase:"like reading"},
+      {en:"play",ph:"/pleɪ/",cn:"玩/演奏",phrase:"play the piano"},
+      {en:"piano",ph:"/piˈænəʊ/",cn:"钢琴",phrase:"play the piano"},
+      {en:"violin",ph:"/ˌvaɪəˈlɪn/",cn:"小提琴",phrase:"play the violin"},
+      {en:"football",ph:"/ˈfʊtbɔːl/",cn:"足球",phrase:"play football"}
+    ],
+    "U4": [
+      {en:"house",ph:"/haʊs/",cn:"房子",phrase:"a big house"},
+      {en:"forest",ph:"/ˈfɒrɪst/",cn:"森林",phrase:"in the forest"},
+      {en:"soup",ph:"/suːp/",cn:"汤",phrase:"have some soup"},
+      {en:"just right",ph:"/dʒʌst raɪt/",cn:"正好",phrase:"just right"},
+      {en:"hard",ph:"/hɑːd/",cn:"硬的",phrase:"hard bed"},
+      {en:"soft",ph:"/sɒft/",cn:"软的",phrase:"soft sofa"},
+      {en:"afraid",ph:"/əˈfreɪd/",cn:"害怕",phrase:"be afraid"},
+      {en:"bear",ph:"/beə(r)/",cn:"熊",phrase:"a bear in the forest"}
+    ],
+    "U5": [
+      {en:"child",ph:"/tʃaɪld/",cn:"孩子",phrase:"a little child"},
+      {en:"children",ph:"/ˈtʃɪldrən/",cn:"孩子们",phrase:"many children"},
+      {en:"parent",ph:"/ˈpeərənt/",cn:"父/母",phrase:"my parents"},
+      {en:"people",ph:"/ˈpiːpl/",cn:"人",phrase:"help people"},
+      {en:"clean",ph:"/kliːn/",cn:"打扫",phrase:"clean the house"},
+      {en:"cook dinner",ph:"/kʊk ˈdɪnə/",cn:"做晚饭",phrase:"Mum cooks dinner."},
+      {en:"wash clothes",ph:"/wɒʃ kləʊðz/",cn:"洗衣服",phrase:"wash clothes"}
+    ],
+    "U6": [
+      {en:"game",ph:"/ɡeɪm/",cn:"游戏",phrase:"play a game"},
+      {en:"at weekends",ph:"/æt ˈwiːkendz/",cn:"在周末",phrase:"at weekends"},
+      {en:"often",ph:"/ˈɒfn/",cn:"经常",phrase:"often play"},
+      {en:"sometimes",ph:"/ˈsʌmtaɪmz/",cn:"有时",phrase:"sometimes read"},
+      {en:"visit",ph:"/ˈvɪzɪt/",cn:"拜访",phrase:"visit grandparents"},
+      {en:"grandparent",ph:"/ˈɡrænpeərənt/",cn:"祖父母",phrase:"my grandparents"},
+      {en:"chat",ph:"/tʃæt/",cn:"聊天",phrase:"chat on the Internet"}
+    ],
+    "U7": [
+      {en:"e-friend",ph:"/ˈiː frend/",cn:"网友",phrase:"an e-friend"},
+      {en:"email",ph:"/ˈiːmeɪl/",cn:"邮件",phrase:"send an email"},
+      {en:"live",ph:"/lɪv/",cn:"居住",phrase:"live in China"},
+      {en:"study",ph:"/ˈstʌdi/",cn:"学习",phrase:"study Chinese"},
+      {en:"learn",ph:"/lɜːn/",cn:"学习",phrase:"learn English"},
+      {en:"speak",ph:"/spiːk/",cn:"说",phrase:"speak English"},
+      {en:"country",ph:"/ˈkʌntri/",cn:"国家",phrase:"different countries"}
+    ],
+    "U8": [
+      {en:"teacher",ph:"/ˈtiːtʃə(r)/",cn:"老师",phrase:"my teacher"},
+      {en:"student",ph:"/ˈstjuːdnt/",cn:"学生",phrase:"a student"},
+      {en:"teach",ph:"/tiːtʃ/",cn:"教",phrase:"teach English"},
+      {en:"writer",ph:"/ˈraɪtə(r)/",cn:"作家",phrase:"a writer"},
+      {en:"worker",ph:"/ˈwɜːkə(r)/",cn:"工人",phrase:"a worker"},
+      {en:"doctor",ph:"/ˈdɒktə(r)/",cn:"医生",phrase:"a doctor"},
+      {en:"nurse",ph:"/nɜːs/",cn:"护士",phrase:"a nurse"},
+      {en:"driver",ph:"/ˈdraɪvə(r)/",cn:"司机",phrase:"a driver"},
+      {en:"cook",ph:"/kʊk/",cn:"厨师/做饭",phrase:"a cook"}
+    ]
+  },
+  "5下": {
+    "U1": [
+      {en:"cinema",ph:"/ˈsɪnəmə/",cn:"电影院",phrase:"go to the cinema"},
+      {en:"hospital",ph:"/ˈhɒspɪtl/",cn:"医院",phrase:"go to hospital"},
+      {en:"shop",ph:"/ʃɒp/",cn:"商店",phrase:"a toy shop"},
+      {en:"station",ph:"/ˈsteɪʃn/",cn:"车站",phrase:"at the bus station"},
+      {en:"street",ph:"/striːt/",cn:"街道",phrase:"on the street"},
+      {en:"supermarket",ph:"/ˈsuːpəmɑːkɪt/",cn:"超市",phrase:"go to the supermarket"},
+      {en:"bookshop",ph:"/ˈbʊkʃɒp/",cn:"书店",phrase:"near the bookshop"}
+    ],
+    "U2": [
+      {en:"how",ph:"/haʊ/",cn:"怎样",phrase:"How do I get there?"},
+      {en:"far",ph:"/fɑː/",cn:"远的",phrase:"Is it far?"},
+      {en:"near",ph:"/nɪə/",cn:"近的",phrase:"It's near."},
+      {en:"bus",ph:"/bʌs/",cn:"公交",phrase:"by bus"},
+      {en:"metro",ph:"/ˈmetrəʊ/",cn:"地铁",phrase:"by metro"},
+      {en:"taxi",ph:"/ˈtæksi/",cn:"出租车",phrase:"take a taxi"},
+      {en:"bike",ph:"/baɪk/",cn:"自行车",phrase:"ride a bike"},
+      {en:"walk",ph:"/wɔːk/",cn:"步行",phrase:"I walk to school."}
+    ],
+    "U3": [
+      {en:"ask",ph:"/ɑːsk/",cn:"问",phrase:"Can I ask a question?"},
+      {en:"answer",ph:"/ˈɑːnsə/",cn:"回答",phrase:"the answer"},
+      {en:"question",ph:"/ˈkwestʃən/",cn:"问题",phrase:"a good question"},
+      {en:"along",ph:"/əˈlɒŋ/",cn:"沿着",phrase:"walk along the street"},
+      {en:"turn left",ph:"/tɜːn left/",cn:"左转",phrase:"Turn left."},
+      {en:"turn right",ph:"/tɜːn raɪt/",cn:"右转",phrase:"Turn right."},
+      {en:"traffic light",ph:"/ˈtræfɪk laɪt/",cn:"红绿灯",phrase:"at the traffic lights"}
+    ],
+    "U4": [
+      {en:"see a film",ph:"/siː ə fɪlm/",cn:"看电影",phrase:"Let's see a film."},
+      {en:"film",ph:"/fɪlm/",cn:"电影",phrase:"a funny film"},
+      {en:"tomorrow",ph:"/təˈmɒrəʊ/",cn:"明天",phrase:"see you tomorrow"},
+      {en:"party",ph:"/ˈpɑːti/",cn:"聚会",phrase:"have a party"},
+      {en:"because",ph:"/bɪˈkɒz/",cn:"因为",phrase:"Because it's fun."},
+      {en:"fair",ph:"/feə/",cn:"集市",phrase:"go to the fair"}
+    ],
+    "U5": [
+      {en:"child",ph:"/tʃaɪld/",cn:"孩子",phrase:"a little child"},
+      {en:"children",ph:"/ˈtʃɪldrən/",cn:"孩子们",phrase:"many children"},
+      {en:"parent",ph:"/ˈpeərənt/",cn:"父/母",phrase:"my parents"},
+      {en:"people",ph:"/ˈpiːpl/",cn:"人",phrase:"help people"},
+      {en:"clean",ph:"/kliːn/",cn:"打扫",phrase:"clean the house"},
+      {en:"cook dinner",ph:"/kʊk ˈdɪnə/",cn:"做晚饭",phrase:"Mum cooks dinner."}
+    ],
+    "U6": [
+      {en:"game",ph:"/ɡeɪm/",cn:"游戏",phrase:"play a game"},
+      {en:"at weekends",ph:"/æt ˈwiːkendz/",cn:"在周末",phrase:"at weekends"},
+      {en:"often",ph:"/ˈɒfn/",cn:"经常",phrase:"often play"},
+      {en:"sometimes",ph:"/ˈsʌmtaɪmz/",cn:"有时",phrase:"sometimes read"},
+      {en:"visit",ph:"/ˈvɪzɪt/",cn:"拜访",phrase:"visit grandparents"},
+      {en:"grandparent",ph:"/ˈɡrænpeərənt/",cn:"祖父母",phrase:"my grandparents"}
+    ],
+    "U7": [
+      {en:"e-friend",ph:"/ˈiː frend/",cn:"网友",phrase:"an e-friend"},
+      {en:"email",ph:"/ˈiːmeɪl/",cn:"邮件",phrase:"send an email"},
+      {en:"live",ph:"/lɪv/",cn:"居住",phrase:"live in China"},
+      {en:"study",ph:"/ˈstʌdi/",cn:"学习",phrase:"study Chinese"},
+      {en:"learn",ph:"/lɜːn/",cn:"学习",phrase:"learn English"},
+      {en:"speak",ph:"/spiːk/",cn:"说",phrase:"speak English"}
+    ],
+    "U8": [
+      {en:"teacher",ph:"/ˈtiːtʃə(r)/",cn:"老师",phrase:"my teacher"},
+      {en:"student",ph:"/ˈstjuːdnt/",cn:"学生",phrase:"a student"},
+      {en:"teach",ph:"/tiːtʃ/",cn:"教",phrase:"teach English"},
+      {en:"writer",ph:"/ˈraɪtə(r)/",cn:"作家",phrase:"a writer"},
+      {en:"worker",ph:"/ˈwɜːkə(r)/",cn:"工人",phrase:"a worker"},
+      {en:"doctor",ph:"/ˈdɒktə(r)/",cn:"医生",phrase:"a doctor"},
+      {en:"nurse",ph:"/nɜːs/",cn:"护士",phrase:"a nurse"},
+      {en:"driver",ph:"/ˈdraɪvə(r)/",cn:"司机",phrase:"a driver"}
+    ]
+  },
+  "6上": {
+    "U1": [
+      {en:"long long ago",ph:"/lɒŋ lɒŋ əˈɡəʊ/",cn:"很久以前",phrase:"Long long ago..."},
+      {en:"magic",ph:"/ˈmædʒɪk/",cn:"神奇的",phrase:"magic clothes"},
+      {en:"clever",ph:"/ˈklevə(r)/",cn:"聪明的",phrase:"a clever boy"},
+      {en:"foolish",ph:"/ˈfuːlɪʃ/",cn:"愚蠢的",phrase:"a foolish man"},
+      {en:"through",ph:"/θruː/",cn:"穿过",phrase:"walk through"},
+      {en:"shout",ph:"/ʃaʊt/",cn:"大喊",phrase:"shout at"},
+      {en:"laugh",ph:"/lɑːf/",cn:"笑",phrase:"laugh at"},
+      {en:"king",ph:"/kɪŋ/",cn:"国王",phrase:"the king"},
+      {en:"clothes",ph:"/kləʊðz/",cn:"衣服",phrase:"new clothes"}
+    ],
+    "U2": [
+      {en:"sunny",ph:"/ˈsʌni/",cn:"晴朗的",phrase:"a sunny day"},
+      {en:"show",ph:"/ʃəʊ/",cn:"展示/表演",phrase:"show me"},
+      {en:"interesting",ph:"/ˈɪntrəstɪŋ/",cn:"有趣的",phrase:"an interesting show"},
+      {en:"weather",ph:"/ˈweðə(r)/",cn:"天气",phrase:"the weather"},
+      {en:"become",ph:"/bɪˈkʌm/",cn:"变成",phrase:"become rainy"},
+      {en:"windy",ph:"/ˈwɪndi/",cn:"有风的",phrase:"a windy day"},
+      {en:"cloudy",ph:"/ˈklaʊdi/",cn:"多云的",phrase:"a cloudy day"},
+      {en:"rainy",ph:"/ˈreɪni/",cn:"下雨的",phrase:"a rainy day"},
+      {en:"snowy",ph:"/ˈsnəʊi/",cn:"下雪的",phrase:"a snowy day"}
+    ],
+    "U3": [
+      {en:"holiday",ph:"/ˈhɒlədeɪ/",cn:"假期",phrase:"summer holiday"},
+      {en:"National Day",ph:"/ˈnæʃnəl deɪ/",cn:"国庆节",phrase:"National Day"},
+      {en:"visit",ph:"/ˈvɪzɪt/",cn:"拜访/参观",phrase:"visit Beijing"},
+      {en:"Tian'anmen Square",ph:"/tjænˈænmən skweə/",cn:"天安门广场",phrase:"Tian'anmen Square"},
+      {en:"Palace Museum",ph:"/ˈpæləs mjuˈziːəm/",cn:"故宫博物院",phrase:"the Palace Museum"},
+      {en:"Summer Palace",ph:"/ˈsʌmə ˈpæləs/",cn:"颐和园",phrase:"the Summer Palace"},
+      {en:"Great Wall",ph:"/ɡreɪt wɔːl/",cn:"长城",phrase:"the Great Wall"},
+      {en:"Shanghai",ph:"/ˈʃæŋhaɪ/",cn:"上海",phrase:"go to Shanghai"}
+    ],
+    "U4": [
+      {en:"then",ph:"/ðen/",cn:"那时/然后",phrase:"and then"},
+      {en:"excited",ph:"/ɪkˈsaɪtɪd/",cn:"兴奋的",phrase:"feel excited"},
+      {en:"happy",ph:"/ˈhæpi/",cn:"开心的",phrase:"be happy"},
+      {en:"sad",ph:"/sæd/",cn:"伤心的",phrase:"be sad"},
+      {en:"bored",ph:"/bɔːd/",cn:"无聊的",phrase:"feel bored"},
+      {en:"tired",ph:"/ˈtaɪəd/",cn:"累的",phrase:"feel tired"},
+      {en:"thirsty",ph:"/ˈθɜːsti/",cn:"渴的",phrase:"feel thirsty"},
+      {en:"hungry",ph:"/ˈhʌŋɡri/",cn:"饿的",phrase:"feel hungry"}
+    ],
+    "U5": [
+      {en:"sign",ph:"/saɪn/",cn:"标志",phrase:"Read the sign."},
+      {en:"No smoking",ph:"/nəʊ ˈsməʊkɪŋ/",cn:"禁止吸烟",phrase:"No smoking here."},
+      {en:"No littering",ph:"/nəʊ ˈlɪtərɪŋ/",cn:"禁止乱扔垃圾",phrase:"No littering."},
+      {en:"No parking",ph:"/nəʊ ˈpɑːkɪŋ/",cn:"禁止停车",phrase:"No parking."},
+      {en:"No eating or drinking",ph:"/nəʊ ˈiːtɪŋ ɔː ˈdrɪŋkɪŋ/",cn:"禁止饮食",phrase:"No eating or drinking."},
+      {en:"Be quiet",ph:"/biː ˈkwaɪət/",cn:"保持安静",phrase:"Be quiet."},
+      {en:"danger",ph:"/ˈdeɪndʒə(r)/",cn:"危险",phrase:"Danger!"},
+      {en:"wet floor",ph:"/wet flɔː(r)/",cn:"小心地滑",phrase:"Wet floor."}
+    ],
+    "U6": [
+      {en:"keep",ph:"/kiːp/",cn:"保持",phrase:"keep clean"},
+      {en:"clean",ph:"/kliːn/",cn:"干净的/打扫",phrase:"keep clean"},
+      {en:"dirty",ph:"/ˈdɜːti/",cn:"脏的",phrase:"dirty water"},
+      {en:"waste",ph:"/weɪst/",cn:"浪费",phrase:"waste water"},
+      {en:"save",ph:"/seɪv/",cn:"节约/拯救",phrase:"save water"},
+      {en:"water",ph:"/ˈwɔːtə(r)/",cn:"水",phrase:"save water"},
+      {en:"energy",ph:"/ˈenədʒi/",cn:"能源",phrase:"save energy"},
+      {en:"air",ph:"/eə(r)/",cn:"空气",phrase:"fresh air"},
+      {en:"Earth",ph:"/ɜːθ/",cn:"地球",phrase:"protect the Earth"}
+    ],
+    "U7": [
+      {en:"protect",ph:"/prəˈtekt/",cn:"保护",phrase:"protect the Earth"},
+      {en:"Earth",ph:"/ɜːθ/",cn:"地球",phrase:"the Earth"},
+      {en:"water",ph:"/ˈwɔːtə(r)/",cn:"水",phrase:"save water"},
+      {en:"energy",ph:"/ˈenədʒi/",cn:"能源",phrase:"save energy"},
+      {en:"plastic",ph:"/ˈplæstɪk/",cn:"塑料",phrase:"plastic bags"},
+      {en:"paper",ph:"/ˈpeɪpə(r)/",cn:"纸",phrase:"save paper"},
+      {en:"wood",ph:"/wʊd/",cn:"木头",phrase:"cut down trees"},
+      {en:"oil",ph:"/ɔɪl/",cn:"石油",phrase:"use too much oil"},
+      {en:"coal",ph:"/kəʊl/",cn:"煤",phrase:"use coal"}
+    ],
+    "U8": [
+      {en:"dream",ph:"/driːm/",cn:"梦想",phrase:"my dream"},
+      {en:"astronaut",ph:"/ˈæstrənɔːt/",cn:"宇航员",phrase:"be an astronaut"},
+      {en:"pianist",ph:"/ˈpɪənɪst/",cn:"钢琴家",phrase:"be a pianist"},
+      {en:"dancer",ph:"/ˈdɑːnsə(r)/",cn:"舞蹈家",phrase:"be a dancer"},
+      {en:"writer",ph:"/ˈraɪtə(r)/",cn:"作家",phrase:"be a writer"},
+      {en:"football player",ph:"/ˈfʊtbɔːl pleɪə(r)/",cn:"足球运动员",phrase:"be a football player"},
+      {en:"basketball player",ph:"/ˈbɑːskɪtbɔːl pleɪə(r)/",cn:"篮球运动员",phrase:"be a basketball player"},
+      {en:"singer",ph:"/ˈsɪŋə(r)/",cn:"歌手",phrase:"be a singer"},
+      {en:"future",ph:"/ˈfjuːtʃə(r)/",cn:"未来",phrase:"in the future"}
+    ]
+  },
+  "6下": {
+    "U1": [
+      {en:"food",ph:"/fuːd/",cn:"食物",phrase:"healthy food"},
+      {en:"healthy",ph:"/ˈhelθi/",cn:"健康的",phrase:"keep healthy"},
+      {en:"diet",ph:"/ˈdaɪət/",cn:"饮食",phrase:"a healthy diet"},
+      {en:"rice",ph:"/raɪs/",cn:"米饭",phrase:"some rice"},
+      {en:"bread",ph:"/bred/",cn:"面包",phrase:"some bread"},
+      {en:"milk",ph:"/mɪlk/",cn:"牛奶",phrase:"drink milk"},
+      {en:"meat",ph:"/miːt/",cn:"肉",phrase:"eat meat"},
+      {en:"vegetable",ph:"/ˈvedʒtəbl/",cn:"蔬菜",phrase:"eat vegetables"},
+      {en:"fruit",ph:"/fruːt/",cn:"水果",phrase:"eat fruit"}
+    ],
+    "U2": [
+      {en:"dream",ph:"/driːm/",cn:"梦想",phrase:"my dream"},
+      {en:"astronaut",ph:"/ˈæstrənɔːt/",cn:"宇航员",phrase:"be an astronaut"},
+      {en:"travel",ph:"/ˈtrævl/",cn:"旅行",phrase:"travel around the world"},
+      {en:"space",ph:"/speɪs/",cn:"太空",phrase:"in space"},
+      {en:"spaceship",ph:"/ˈspeɪsʃɪp/",cn:"宇宙飞船",phrase:"a spaceship"},
+      {en:"pilot",ph:"/ˈpaɪlət/",cn:"飞行员",phrase:"be a pilot"},
+      {en:"want to be",ph:"/wɒnt tə biː/",cn:"想成为",phrase:"I want to be..."},
+      {en:"in the future",ph:"/ɪn ðə ˈfjuːtʃə/",cn:"在未来",phrase:"in the future"}
+    ],
+    "U3": [
+      {en:"careful",ph:"/ˈkeəfl/",cn:"小心的",phrase:"be careful"},
+      {en:"safe",ph:"/seɪf/",cn:"安全的",phrase:"keep safe"},
+      {en:"safety",ph:"/ˈseɪfti/",cn:"安全",phrase:"road safety"},
+      {en:"road",ph:"/rəʊd/",cn:"马路",phrase:"on the road"},
+      {en:"cross",ph:"/krɒs/",cn:"穿过",phrase:"cross the road"},
+      {en:"zebra crossing",ph:"/ˈzebrə krɒsɪŋ/",cn:"斑马线",phrase:"at the zebra crossing"},
+      {en:"traffic light",ph:"/ˈtræfɪk laɪt/",cn:"红绿灯",phrase:"traffic lights"},
+      {en:"pavement",ph:"/ˈpeɪvmənt/",cn:"人行道",phrase:"on the pavement"},
+      {en:"look out",ph:"/lʊk aʊt/",cn:"小心",phrase:"look out for cars"}
+    ],
+    "U4": [
+      {en:"road",ph:"/rəʊd/",cn:"道路",phrase:"on the road"},
+      {en:"must",ph:"/mʌst/",cn:"必须",phrase:"must stop"},
+      {en:"stop",ph:"/stɒp/",cn:"停止",phrase:"stop and wait"},
+      {en:"wait",ph:"/weɪt/",cn:"等待",phrase:"wait for the green light"},
+      {en:"green light",ph:"/ɡriːn laɪt/",cn:"绿灯",phrase:"go at the green light"},
+      {en:"red light",ph:"/red laɪt/",cn:"红灯",phrase:"stop at the red light"},
+      {en:"yellow light",ph:"/ˈjeləʊ laɪt/",cn:"黄灯",phrase:"wait at the yellow light"},
+      {en:"follow",ph:"/ˈfɒləʊ/",cn:"遵守/跟随",phrase:"follow the rules"},
+      {en:"rule",ph:"/ruːl/",cn:"规则",phrase:"traffic rules"}
+    ],
+    "U5": [
+      {en:"children's day",ph:"/ˈtʃɪldrənz deɪ/",cn:"儿童节",phrase:"Happy Children's Day"},
+      {en:"festival",ph:"/ˈfestəvl/",cn:"节日",phrase:"a festival"},
+      {en:"Spring Festival",ph:"/sprɪŋ ˈfestəvl/",cn:"春节",phrase:"the Spring Festival"},
+      {en:"Christmas",ph:"/ˈkrɪsməs/",cn:"圣诞节",phrase:"at Christmas"},
+      {en:"Mid-Autumn Festival",ph:"/mɪd ˈɔːtəm ˈfestəvl/",cn:"中秋节",phrase:"the Mid-Autumn Festival"},
+      {en:"Dragon Boat Festival",ph:"/ˈdræɡən bəʊt ˈfestəvl/",cn:"端午节",phrase:"the Dragon Boat Festival"},
+      {en:"holiday",ph:"/ˈhɒlədeɪ/",cn:"假期",phrase:"a holiday"},
+      {en:"present",ph:"/ˈpreznt/",cn:"礼物",phrase:"get a present"}
+    ],
+    "U6": [
+      {en:"plan",ph:"/plæn/",cn:"计划",phrase:"make a plan"},
+      {en:"travel",ph:"/ˈtrævl/",cn:"旅行",phrase:"travel plan"},
+      {en:"go to Beijing",ph:"/ɡəʊ tə beɪˈdʒɪŋ/",cn:"去北京",phrase:"go to Beijing"},
+      {en:"visit",ph:"/ˈvɪzɪt/",cn:"参观",phrase:"visit the Great Wall"},
+      {en:"plane",ph:"/pleɪn/",cn:"飞机",phrase:"by plane"},
+      {en:"train",ph:"/treɪn/",cn:"火车",phrase:"by train"},
+      {en:"ship",ph:"/ʃɪp/",cn:"船",phrase:"by ship"},
+      {en:"how long",ph:"/haʊ lɒŋ/",cn:"多久",phrase:"How long...?"},
+      {en:"stay",ph:"/steɪ/",cn:"停留",phrase:"stay there"}
+    ],
+    "U7": [
+      {en:"summer holiday",ph:"/ˈsʌmə ˈhɒlədeɪ/",cn:"暑假",phrase:"this summer holiday"},
+      {en:"go back",ph:"/ɡəʊ bæk/",cn:"回去",phrase:"go back to..."},
+      {en:"country",ph:"/ˈkʌntri/",cn:"国家/乡村",phrase:"in the country"},
+      {en:"UK",ph:"/juː keɪ/",cn:"英国",phrase:"go to the UK"},
+      {en:"US",ph:"/juː es/",cn:"美国",phrase:"go to the US"},
+      {en:"Australia",ph:"/ɒˈstreɪliə/",cn:"澳大利亚",phrase:"go to Australia"},
+      {en:"Canada",ph:"/ˈkænədə/",cn:"加拿大",phrase:"go to Canada"},
+      {en:"visit",ph:"/ˈvɪzɪt/",cn:"拜访",phrase:"visit my relatives"}
+    ],
+    "U8": [
+      {en:"review",ph:"/rɪˈvjuː/",cn:"复习",phrase:"review lessons"},
+      {en:"test",ph:"/test/",cn:"测试",phrase:"have a test"},
+      {en:"exam",ph:"/ɪɡˈzæm/",cn:"考试",phrase:"final exam"},
+      {en:"pass",ph:"/pɑːs/",cn:"通过",phrase:"pass the exam"},
+      {en:"fail",ph:"/feɪl/",cn:"失败/不及格",phrase:"fail the exam"},
+      {en:"work hard",ph:"/wɜːk hɑːd/",cn:"努力学习",phrase:"work hard"},
+      {en:"do well",ph:"/duː wel/",cn:"做得好",phrase:"do well in tests"},
+      {en:"primary school",ph:"/ˈpraɪməri skuːl/",cn:"小学",phrase:"leave primary school"},
+      {en:"middle school",ph:"/ˈmɪdl skuːl/",cn:"中学",phrase:"go to middle school"}
+    ]
+  }
+};
+let offset=0;
+const CHECK_KEY="yl_check", WRONG_KEY="yl_wrong";
+
+function speak(text){
+  if(!window.speechSynthesis) return;
+  const u=new SpeechSynthesisUtterance(text); u.lang="en-US";
+  speechSynthesis.cancel(); speechSynthesis.speak(u);
+}
+function initGrades(){
+  const g=document.getElementById("grade");
+  Object.keys(DATA).forEach(k=>{const o=document.createElement("option");o.value=k;o.text=k;g.appendChild(o);});
+}
+function renderUnits(){
+  const grade=document.getElementById("grade").value;
+  const u=document.getElementById("unit");
+  u.innerHTML='<option value="ALL">全部单元</option>';
+  if(DATA[grade])Object.keys(DATA[grade]).forEach(k=>{const o=document.createElement("option");o.value=k;o.text=k;u.appendChild(o);});
+}
+function getWords(){
+  const grade=document.getElementById("grade").value;
+  const unit=document.getElementById("unit").value;
+  let arr=[];
+  if(!DATA[grade])return arr;
+  if(unit==="ALL")Object.values(DATA[grade]).forEach(a=>arr.push(...a));
+  else arr=DATA[grade][unit]||[];
+  return arr;
+}
+function render(){
+  const words=getWords();
+  const day=Math.floor(Date.now()/86400000)+offset;
+  document.getElementById("dayLabel").innerText="第 "+(day%365+1)+" 天 · "+new Date().toLocaleDateString();
+  const perDay=5;
+  const start=words.length?(day*perDay)%words.length:0;
+  let pick=[];
+  for(let i=0;i<perDay&&words.length;i++)pick.push(words[(start+i)%words.length]);
+  const list=document.getElementById("list"); list.innerHTML="";
+  const gradeVal=document.getElementById("grade").value;
+  pick.forEach(w=>{
+    const card=document.createElement("div"); card.className="card";
+    card.onclick=()=>{card.classList.toggle("flip");speak(w.en);};
+    card.innerHTML=`<div class="en">${w.en}</div><div class="ph">${w.ph||""}</div><div class="cn">${w.cn}</div><div class="phrase">📌 ${w.phrase||""}</div><div class="btns"><button class="know" onclick="event.stopPropagation();mark('${gradeVal}','${w.en}',true)">认识</button><button class="unknow" onclick="event.stopPropagation();mark('${gradeVal}','${w.en}',false)">不会</button></div>`;
+    list.appendChild(card);
+  });
+  renderWrong();
+}
+function mark(grade,en,ok){
+  const log=JSON.parse(localStorage.getItem(CHECK_KEY)||"{}"); log[grade+"/"+en]=ok;
+  localStorage.setItem(CHECK_KEY,JSON.stringify(log));
+  let wrong=JSON.parse(localStorage.getItem(WRONG_KEY)||"[]");
+  const id=grade+"/"+en;
+  if(!ok&&!wrong.includes(id))wrong.push(id);
+  if(ok)wrong=wrong.filter(x=>x!==id);
+  localStorage.setItem(WRONG_KEY,JSON.stringify(wrong)); renderWrong();
+}
+function renderWrong(){
+  const wrong=JSON.parse(localStorage.getItem(WRONG_KEY)||"[]");
+  document.getElementById("wrongList").innerHTML=wrong.map(x=>`<li onclick="speak('${x.split('/')[1]}')">🔁 ${x}</li>`).join("")||"<li>暂无错词</li>";
+}
+function clearWrong(){localStorage.removeItem(WRONG_KEY);renderWrong();}
+function prevDay(){offset--;render();}
+function nextDay(){offset++;render();}
+document.getElementById("grade").onchange=()=>{renderUnits();render();};
+document.getElementById("unit").onchange=render;
+initGrades();renderUnits();render();
+</script>
+</body>
+</html>
